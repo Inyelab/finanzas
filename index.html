@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanzas — Mecatronica Inyelab</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{--bg:#0d0f14;--surface:#141720;--surface2:#1c2030;--border:#252a3a;--border2:#2e3550;--accent:#00e5a0;--accent2:#0090ff;--warn:#ff6b35;--danger:#ff3d5a;--text:#e8ecf4;--text2:#8892aa;--text3:#55627a;--green:#00c87a;--red:#ff3d5a;--yellow:#ffc107;--purple:#a855f7;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;}
+.logo span{color:var(--text2);font-weight:400;}
+.header-date{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:13px 16px;font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;letter-spacing:.5px;text-transform:uppercase;font-family:var(--mono);}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+main{padding:20px;max-width:1400px;margin:0 auto;}
+.panel{display:none;}.panel.active{display:block;}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin-bottom:20px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.card.green::before{background:var(--green);}.card.red::before{background:var(--red);}.card.blue::before{background:var(--accent2);}.card.accent::before{background:var(--accent);}.card.yellow::before{background:var(--yellow);}.card.purple::before{background:var(--purple);}.card.orange::before{background:var(--warn);}
+.card-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--mono);margin-bottom:6px;}
+.card-value{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;}
+.card-value.positive{color:var(--green);}.card-value.negative{color:var(--red);}.card-value.neutral{color:var(--accent2);}.card-value.highlight{color:var(--accent);}.card-value.warn{color:var(--warn);}.card-value.purp{color:var(--purple);}
+.card-sub{font-size:10px;color:var(--text3);margin-top:5px;font-family:var(--mono);}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;margin-top:24px;}
+.section-title{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);display:flex;align-items:center;gap:8px;}
+.section-title::before{content:'';display:inline-block;width:12px;height:1px;background:var(--border2);}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);}
+.form-group input,.form-group select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 10px;outline:none;transition:border-color .2s;}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent);}
+.form-group select option{background:var(--surface2);}
+.btn{padding:8px 18px;border-radius:6px;border:none;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .2s;text-transform:uppercase;align-self:flex-end;}
+.btn-primary{background:var(--accent);color:#000;}.btn-primary:hover{background:#00ffb3;transform:translateY(-1px);}
+.btn-danger{background:transparent;color:var(--red);border:1px solid var(--red);padding:3px 8px;font-size:10px;}.btn-danger:hover{background:var(--red);color:#fff;}
+.btn-sm{padding:5px 10px;font-size:10px;}.btn-sec{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);}.btn-sec:hover{border-color:var(--accent2);color:var(--accent2);}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead th{background:var(--surface2);padding:9px 12px;text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface2);}
+tbody td{padding:9px 12px;font-family:var(--mono);font-size:11px;color:var(--text2);}
+tbody td.amount-pos{color:var(--green);font-weight:600;}
+tbody td.amount-neg{color:var(--red);font-weight:600;}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-family:var(--mono);letter-spacing:.5px;font-weight:600;}
+.badge-activo{background:rgba(0,200,122,.15);color:var(--green);}.badge-pasivo{background:rgba(255,61,90,.15);color:var(--red);}
+.badge-casa{background:rgba(255,193,7,.15);color:var(--yellow);}.badge-negocio{background:rgba(0,229,160,.15);color:var(--accent);}
+.badge-compartido{background:rgba(0,144,255,.15);color:var(--accent2);}
+.badge-nuevo{background:rgba(0,144,255,.15);color:var(--accent2);}.badge-usado{background:rgba(168,85,247,.15);color:var(--purple);}
+.badge-reparado{background:rgba(255,107,53,.15);color:var(--warn);}
+.rem-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:14px;}
+.bar-c{width:100%;background:var(--surface2);border-radius:4px;height:6px;margin:10px 0;overflow:hidden;}
+.bar-f{height:100%;border-radius:4px;transition:width .5s ease;}
+.bar-green{background:linear-gradient(90deg,var(--green),#00e5a0);}.bar-red{background:linear-gradient(90deg,var(--red),#ff6b35);}.bar-yellow{background:linear-gradient(90deg,var(--yellow),#ffaa00);}.bar-purple{background:linear-gradient(90deg,var(--purple),#0090ff);}.bar-warn{background:linear-gradient(90deg,var(--warn),#ffc107);}
+.rem-big{font-family:var(--mono);font-size:32px;font-weight:700;line-height:1;}
+.pct-lbl{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px;}
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:14px;}
+.chart-title{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;}
+canvas{width:100%!important;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.def-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.def-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;}
+.def-card h3{font-family:var(--mono);font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.def-card .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.def-card ul{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.def-card ul li{font-size:12px;color:var(--text2);display:flex;gap:6px;}
+.def-card ul li::before{content:'→';color:var(--text3);font-family:var(--mono);flex-shrink:0;}
+.sep{height:1px;background:var(--border);margin:18px 0;}
+.nota{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px;}
+.proj-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--mono);}
+.proj-row:last-child{border:none;}
+.proj-row .pl{color:var(--text3);}.proj-row .pv{color:var(--text);}.proj-row .pv.pos{color:var(--green);}.proj-row .pv.neg{color:var(--red);}
+.empty{padding:28px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:11px;}
+.tips-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.tip{background:var(--surface2);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:9px 12px;font-size:12px;color:var(--text2);line-height:1.5;}
+.tip.warn{border-left-color:var(--warn);}.tip.danger{border-left-color:var(--danger);}.tip.info{border-left-color:var(--accent2);}.tip.purple{border-left-color:var(--purple);}
+.tip strong{color:var(--text);font-weight:600;}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px;}
+.inv-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;position:relative;cursor:pointer;transition:all .2s;}
+.inv-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.inv-card.selected{border-color:var(--accent);background:rgba(0,229,160,.05);}
+.inv-card .icon{font-size:24px;margin-bottom:10px;}
+.inv-card h3{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.inv-card p{font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:8px;}
+.inv-card .tir{font-family:var(--mono);font-size:10px;color:var(--accent);}
+.inv-check{position:absolute;top:12px;right:12px;width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;transition:all .2s;}
+.inv-card.selected .inv-check{background:var(--accent);border-color:var(--accent);color:#000;}
+/* SLIDER */
+.slider-track{position:relative;height:28px;background:var(--surface2);border-radius:6px;overflow:hidden;border:1px solid var(--border);margin:12px 0;}
+.sf-casa{position:absolute;top:0;left:0;height:100%;background:rgba(255,193,7,.25);transition:width .3s;display:flex;align-items:center;justify-content:center;}
+.sf-neg{position:absolute;top:0;right:0;height:100%;background:rgba(0,229,160,.25);transition:width .3s;display:flex;align-items:center;justify-content:center;}
+.sl-lbl{font-family:var(--mono);font-size:11px;font-weight:700;pointer-events:none;}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:var(--border2);outline:none;margin:6px 0;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg);}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg);}
+/* STOCK TAGS */
+.stag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-family:var(--mono);}
+.stag-electronico{background:rgba(0,144,255,.15);color:var(--accent2);}
+.stag-sensor{background:rgba(0,200,122,.15);color:var(--green);}
+.stag-electrico{background:rgba(168,85,247,.15);color:var(--purple);}
+.stag-mecanico{background:rgba(255,107,53,.15);color:var(--warn);}
+.stag-otro{background:rgba(85,98,122,.15);color:var(--text3);}
+.search-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 12px;outline:none;width:100%;transition:border-color .2s;}
+.search-input:focus{border-color:var(--accent);}
+.month-sel{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.month-sel select{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:6px;outline:none;}
+.month-sel label{font-family:var(--mono);font-size:10px;color:var(--text3);}
+@media(max-width:700px){.two-col,.def-grid{grid-template-columns:1fr;}main{padding:12px;}.form-row{grid-template-columns:1fr 1fr;}.summary-grid{grid-template-columns:1fr 1fr;}.card-value{font-size:17px;}}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+/* MODAL EDITAR */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:24px;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;position:relative;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.modal-title{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;}
+.modal-close{background:transparent;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:4px;transition:color .2s;}
+.modal-close:hover{color:var(--red);}
+.btn-edit{background:transparent;color:var(--accent2);border:1px solid var(--accent2);padding:3px 8px;font-size:10px;border-radius:4px;font-family:var(--mono);cursor:pointer;transition:all .2s;margin-right:4px;}
+.btn-edit:hover{background:var(--accent2);color:#fff;}
+/* SYNC */
+.sync-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sync-btn{padding:6px 14px;border-radius:6px;border:none;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;}
+.sync-btn.connect{background:rgba(0,144,255,.15);color:var(--accent2);border:1px solid var(--accent2);}
+.sync-btn.connect:hover{background:var(--accent2);color:#fff;}
+.sync-btn.syncing{background:rgba(0,229,160,.15);color:var(--accent);border:1px solid var(--accent);cursor:default;}
+.sync-btn.error{background:rgba(255,61,90,.15);color:var(--red);border:1px solid var(--red);}
+.sync-status{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.sync-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
+.sync-dot.green{background:var(--green);box-shadow:0 0 6px var(--green);}
+.sync-dot.grey{background:var(--text3);}
+.sync-dot.yellow{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Mecatronica Inyelab <span>/ Finanzas</span></div>
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div class="sync-bar">
+      <span class="sync-status"><span class="sync-dot grey" id="syncDot"></span><span id="syncTxt">Sin conectar</span></span>
+      <button class="sync-btn connect" id="syncBtn" onclick="handleSync()">☁ Conectar Drive</button>
+    </div>
+    <div class="header-date" id="hDate"></div>
+  </div>
+</header>
+<div class="tabs">
+  <div class="tab active"  onclick="showP('resumen',this)">Dashboard</div>
+  <div class="tab" onclick="showP('movimientos',this)">Movimientos</div>
+  <div class="tab" onclick="showP('stock',this)">Stock</div>
+  <div class="tab" onclick="showP('reparto',this)">Reparto Casa/Neg</div>
+  <div class="tab" onclick="showP('activos',this)">Activos/Pasivos</div>
+  <div class="tab" onclick="showP('remanente',this)">Remanente</div>
+  <div class="tab" onclick="showP('inversiones',this)">Inversiones</div>
+  <div class="tab" onclick="showP('ayuda',this)">Ayuda</div>
+</div>
+<main>
+
+<!-- DASHBOARD -->
+<div class="panel active" id="panel-resumen">
+  <div class="summary-grid">
+    <div class="card green"><div class="card-label">Ingresos del Mes</div><div class="card-value positive" id="d-ing">$0</div><div class="card-sub">Casa + Negocio</div></div>
+    <div class="card red"><div class="card-label">Egresos del Mes</div><div class="card-value negative" id="d-eg">$0</div><div class="card-sub">Casa + Negocio</div></div>
+    <div class="card accent"><div class="card-label">Remanente Neto</div><div class="card-value highlight" id="d-rem">$0</div><div class="card-sub">Ingresos − Egresos</div></div>
+    <div class="card purple"><div class="card-label">Capital en Stock</div><div class="card-value purp" id="d-stock">$0</div><div class="card-sub" id="d-stock-sub">0 ítems</div></div>
+    <div class="card yellow"><div class="card-label">Patrimonio Neto</div><div class="card-value" id="d-patr" style="color:var(--yellow)">$0</div><div class="card-sub">Activos − Pasivos</div></div>
+    <div class="card orange"><div class="card-label">Costo Neg. Mes</div><div class="card-value warn" id="d-costoneg">$0</div><div class="card-sub" id="d-costoneg-sub">% gastos compartidos</div></div>
+  </div>
+  <div class="two-col">
+    <div class="chart-wrap"><div class="chart-title">Flujo del Mes — Casa / Negocio / Compartido</div><canvas id="cFlujo" height="180"></canvas></div>
+    <div class="chart-wrap"><div class="chart-title">Egresos por Categoría</div><canvas id="cEg" height="180"></canvas></div>
+  </div>
+  <div class="section-header"><div class="section-title">Alertas Stock</div></div>
+  <div id="d-alertas"></div>
+  <div class="section-header"><div class="section-title">Últimos Movimientos</div></div>
+  <div class="table-wrap" id="d-recientes"><div class="empty">Sin movimientos</div></div>
+</div>
+
+<!-- MOVIMIENTOS -->
+<div class="panel" id="panel-movimientos">
+  <div class="month-sel">
+    <label>Mes:</label>
+    <select id="filtroMes" onchange="renderMovTable()"><option value="">Todos</option></select>
+    <button class="btn btn-sm btn-sec" onclick="exportCSV()">Exportar CSV</button>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Fecha</label><input type="date" id="mFecha"></div>
+    <div class="form-group"><label>Descripción</label><input type="text" id="mDesc" placeholder="Ej: Diagnóstico Sandero..."></div>
+    <div class="form-group"><label>Tipo</label>
+      <select id="mTipo"><option value="ingreso">Ingreso</option><option value="egreso">Egreso</option></select>
+    </div>
+    <div class="form-group"><label>Categoría</label>
+      <select id="mCat">
+        <optgroup label="INGRESOS NEGOCIO">
+          <option value="serv-diag">Diagnóstico / Escaneo</option>
+          <option value="serv-prog">Programación ECU/IMMO</option>
+          <option value="serv-mec">Servicio mecánico</option>
+          <option value="serv-elec">Reparación electrónica</option>
+          <option value="venta-rep">Venta repuesto</option>
+          <option value="ing-neg-otro">Otro ingreso negocio</option>
+        </optgroup>
+        <optgroup label="EGRESOS NEGOCIO">
+          <option value="compra-rep">Compra repuesto (stock)</option>
+          <option value="insumos">Insumos / Materiales</option>
+          <option value="herram">Herramientas / Equipos</option>
+          <option value="impuestos">Impuestos / AFIP / IIBB</option>
+          <option value="internet-neg">Internet negocio</option>
+          <option value="eg-neg-otro">Otro egreso negocio</option>
+        </optgroup>
+        <optgroup label="COMPARTIDOS (Casa y Negocio)">
+          <option value="alquiler">Alquiler</option>
+          <option value="luz">Electricidad</option>
+          <option value="gas">Gas</option>
+          <option value="internet">Internet hogar</option>
+          <option value="agua">Agua</option>
+          <option value="expensas">Expensas / ABL</option>
+        </optgroup>
+        <optgroup label="INGRESOS CASA">
+          <option value="sueldo">Sueldo / Salario externo</option>
+          <option value="alq-cobrado">Alquiler cobrado</option>
+          <option value="ing-casa-otro">Otro ingreso casa</option>
+        </optgroup>
+        <optgroup label="EGRESOS CASA">
+          <option value="alim">Alimentación</option>
+          <option value="salud">Salud / Farmacia</option>
+          <option value="educ">Educación</option>
+          <option value="transp">Transporte</option>
+          <option value="entret">Entretenimiento</option>
+          <option value="deuda">Pago deuda / cuota</option>
+          <option value="eg-casa-otro">Otro egreso casa</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="form-group"><label>Ámbito</label>
+      <select id="mAmbito"><option value="negocio">Negocio</option><option value="casa">Casa</option><option value="compartido">Compartido</option></select>
+    </div>
+    <div class="form-group"><label>Monto ($)</label><input type="number" id="mMonto" placeholder="0" min="0"></div>
+    <div class="form-group"><label>Moneda</label><select id="mMoneda"><option value="ARS">ARS</option><option value="USD">USD</option></select></div>
+    <div class="form-group" style="justify-content:flex-end"><button class="btn btn-primary" onclick="addMov()">+ Agregar</button></div>
+  </div>
+  <div class="table-wrap">
+    <table><thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Ámbito</th><th>Tipo</th><th>Monto</th><th>Mon.</th><th></th></tr></thead>
+    <tbody id="tMov"><tr><td colspan="8" class="empty">Sin movimientos</td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- STOCK -->
+<div class="panel" id="panel-stock">
+  <div class="summary-grid" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr))">
+    <div class="card purple"><div class="card-label">Capital invertido</div><div class="card-value purp" id="st-tcosto">$0</div><div class="card-sub">Costo de compra total</div></div>
+    <div class="card green"><div class="card-label">Valor venta est.</div><div class="card-value positive" id="st-tventa">$0</div><div class="card-sub">Si vendieras todo</div></div>
+    <div class="card accent"><div class="card-label">Ganancia potencial</div><div class="card-value highlight" id="st-tganancia">$0</div><div class="card-sub">Venta − Costo</div></div>
+    <div class="card blue"><div class="card-label">Ítems en stock</div><div class="card-value neutral" id="st-count">0</div><div class="card-sub" id="st-count-sub">0 nuevos / 0 usados</div></div>
+    <div class="card orange"><div class="card-label">Sin precio venta</div><div class="card-value warn" id="st-sinprecio">0</div><div class="card-sub">Pendientes definir</div></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Descripción / Pieza</label><input type="text" id="stDesc" placeholder="Ej: ECU Bosch M17 Fiesta"></div>
+    <div class="form-group"><label>Categoría</label>
+      <select id="stCat">
+        <option value="electronico">Electrónico (ECU/módulo)</option>
+        <option value="sensor">Sensor</option>
+        <option value="electrico">Eléctrico</option>
+        <option value="mecanico">Mecánico</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Condición</label>
+      <select id="stCond"><option value="nuevo">Nuevo</option><option value="usado">Usado</option><option value="reparado">Reparado/Revisado</option></select>
+    </div>
+    <div class="form-group"><label>Vehículo / Aplicación</label><input type="text" id="stVeh" placeholder="Ej: VW Polo 2006..."></div>
+    <div class="form-group"><label>Costo compra ($)</label><input type="number" id="stCosto" placeholder="0" min="0"></div>
+    <div class="form-group"><label>Precio venta ($)</label><input type="number" id="stVenta" placeholder="0" min="0"></div>
+    <div class="form-group"><label>Cantidad</label><input type="number" id="stCant" value="1" min="1"></div>
+    <div class="form-group"><label>Ubicación</label><input type="text" id="stUbic" placeholder="Ej: Cajón 3, Estante A..."></div>
+    <div class="form-group" style="justify-content:flex-end"><button class="btn btn-primary" onclick="addStock()">+ Agregar</button></div>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+    <input class="search-input" id="stBuscar" placeholder="Buscar pieza, vehículo, categoría..." oninput="renderStock()" style="max-width:380px">
+    <select style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 10px;border-radius:6px;outline:none" id="stFiltCond" onchange="renderStock()">
+      <option value="">Todas las condiciones</option><option value="nuevo">Nuevo</option><option value="usado">Usado</option><option value="reparado">Reparado</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table><thead><tr><th>Descripción</th><th>Cat.</th><th>Condición</th><th>Vehículo</th><th>Cant.</th><th>Costo u.</th><th>Precio venta</th><th>Margen</th><th>Ubic.</th><th></th></tr></thead>
+    <tbody id="tStock"><tr><td colspan="10" class="empty">Sin ítems en stock — empezá cargando lo que tenés</td></tr></tbody></table>
+  </div>
+  <div class="tips-list">
+    <div class="tip info"><strong>Consejo:</strong> Cargá de a poco lo que encontrás. Con solo tener el costo de compra ya podés ver cuánto capital tenés inmovilizado. El precio de venta lo podés completar después.</div>
+    <div class="tip warn"><strong>Piezas sin precio de venta</strong> = capital sin retorno definido. Fijales precio o decidí si las vendés como rezago para recuperar liquidez.</div>
+  </div>
+</div>
+
+<!-- REPARTO CASA / NEGOCIO -->
+<div class="panel" id="panel-reparto">
+  <div class="tips-list" style="margin-bottom:18px">
+    <div class="tip info"><strong>¿Para qué sirve esto?</strong> El negocio funciona en tu casa, por eso los gastos compartidos (alquiler, luz, gas, internet) hay que repartirlos. Este módulo define qué porcentaje le corresponde a cada uno y calcula la rentabilidad <em>real</em> del negocio.</div>
+  </div>
+  <div class="rem-box">
+    <div class="card-label" style="margin-bottom:10px">Ajustá el porcentaje del negocio sobre gastos compartidos</div>
+    <div class="slider-track">
+      <div class="sf-casa" id="sfCasa" style="width:60%"><span class="sl-lbl" style="color:var(--yellow)" id="lblCasa">Casa 60%</span></div>
+      <div class="sf-neg" id="sfNeg" style="width:40%"><span class="sl-lbl" style="color:var(--accent)" id="lblNeg">Neg 40%</span></div>
+    </div>
+    <input type="range" id="slReparto" min="0" max="100" value="40" oninput="onReparto()">
+    <div style="display:flex;justify-content:space-between"><span class="nota">← 0% negocio</span><span class="nota">100% negocio →</span></div>
+  </div>
+  <div class="tips-list" style="margin-bottom:18px">
+    <div class="tip"><strong>¿Qué % elegir?</strong> Si trabajás 6-8hs por día en el espacio, un 35-45% es razonable. Si el taller ocupa una habitación de 4 ambientes, eso es ~25%. Podés combinar ambos criterios. Un <strong>40% es un buen punto de partida</strong> para negocio desde casa a tiempo completo.</div>
+  </div>
+  <div class="section-header"><div class="section-title">Gastos compartidos del mes — Desglose</div></div>
+  <div class="table-wrap">
+    <table><thead><tr><th>Gasto</th><th>Total</th><th>% Casa</th><th>Costo Casa</th><th>% Negocio</th><th>Costo Negocio</th></tr></thead>
+    <tbody id="tReparto"><tr><td colspan="6" class="empty">Cargá gastos con ámbito "Compartido" en Movimientos</td></tr></tbody></table>
+  </div>
+  <div class="two-col">
+    <div class="rem-box">
+      <div class="card-label">Gastos compartidos — parte CASA</div>
+      <div class="rem-big" id="rCasa" style="color:var(--yellow)">$0</div>
+      <div class="bar-c"><div class="bar-f bar-yellow" id="brCasa" style="width:60%"></div></div>
+      <div class="pct-lbl" id="rCasaPct">60% de los compartidos</div>
+    </div>
+    <div class="rem-box">
+      <div class="card-label">Gastos compartidos — parte NEGOCIO</div>
+      <div class="rem-big" id="rNeg" style="color:var(--accent)">$0</div>
+      <div class="bar-c"><div class="bar-f bar-green" id="brNeg" style="width:40%"></div></div>
+      <div class="pct-lbl" id="rNegPct">40% de los compartidos</div>
+    </div>
+  </div>
+  <div class="section-header"><div class="section-title">Rentabilidad real del negocio este mes</div></div>
+  <div class="rem-box">
+    <div class="card-label" style="margin-bottom:10px">Ingresos negocio − Egresos negocio − Parte proporcional de gastos compartidos</div>
+    <div class="proj-row"><span class="pl">Ingresos del negocio</span><span class="pv pos" id="rnIng">$0</span></div>
+    <div class="proj-row"><span class="pl">Egresos propios del negocio</span><span class="pv neg" id="rnEg">$0</span></div>
+    <div class="proj-row"><span class="pl">Parte compartida (negocio)</span><span class="pv neg" id="rnComp">$0</span></div>
+    <div class="proj-row" style="border-top:1px solid var(--border2);margin-top:4px;padding-top:10px">
+      <span class="pl" style="color:var(--text);font-weight:600">RESULTADO NETO NEGOCIO</span>
+      <span class="pv" id="rnTotal" style="font-size:16px">$0</span>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIVOS / PASIVOS -->
+<div class="panel" id="panel-activos">
+  <div class="def-grid" style="margin-bottom:8px">
+    <div class="def-card" style="border-left:3px solid var(--green)">
+      <h3 style="color:var(--green)"><span class="dot" style="background:var(--green)"></span>ACTIVO = Lo que tenés</h3>
+      <ul><li>Efectivo, cuentas bancarias</li><li>Herramientas (KTAG, VCDS, VVDI, Autel...)</li><li>Stock de repuestos (a precio de costo)</li><li>Vehículo propio</li><li>Computadoras y equipos</li><li>Clientes que te deben plata</li></ul>
+    </div>
+    <div class="def-card" style="border-left:3px solid var(--red)">
+      <h3 style="color:var(--red)"><span class="dot" style="background:var(--red)"></span>PASIVO = Lo que debés</h3>
+      <ul><li>Préstamos bancarios o personales</li><li>Tarjeta de crédito (saldo pendiente)</li><li>Cuotas pendientes de herramientas</li><li>Impuestos adeudados (AFIP/IIBB)</li><li>Deudas con proveedores</li><li>Alquiler atrasado</li></ul>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Ítem</label><input type="text" id="apDesc" placeholder="Ej: KTAG KSuite, Préstamo..."></div>
+    <div class="form-group"><label>Tipo</label><select id="apTipo"><option value="activo">Activo</option><option value="pasivo">Pasivo</option></select></div>
+    <div class="form-group"><label>Ámbito</label><select id="apAmbito"><option value="negocio">Negocio</option><option value="casa">Casa</option></select></div>
+    <div class="form-group"><label>Valor ($)</label><input type="number" id="apValor" placeholder="0" min="0"></div>
+    <div class="form-group"><label>Moneda</label><select id="apMoneda"><option value="ARS">ARS</option><option value="USD">USD</option></select></div>
+    <div class="form-group"><label>Notas</label><input type="text" id="apNotas" placeholder="Opcional"></div>
+    <div class="form-group" style="justify-content:flex-end"><button class="btn btn-primary" onclick="addAP()">+ Agregar</button></div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="section-header"><div class="section-title" style="color:var(--green)">Activos</div><div class="card-value positive" id="totActivos" style="font-size:15px">$0</div></div>
+      <div class="table-wrap"><table><thead><tr><th>Ítem</th><th>Ámbito</th><th>Moneda</th><th>Valor</th><th></th></tr></thead><tbody id="tActivos"><tr><td colspan="5" class="empty">Sin activos</td></tr></tbody></table></div>
+    </div>
+    <div>
+      <div class="section-header"><div class="section-title" style="color:var(--red)">Pasivos</div><div class="card-value negative" id="totPasivos" style="font-size:15px">$0</div></div>
+      <div class="table-wrap"><table><thead><tr><th>Ítem</th><th>Ámbito</th><th>Moneda</th><th>Valor</th><th></th></tr></thead><tbody id="tPasivos"><tr><td colspan="5" class="empty">Sin pasivos</td></tr></tbody></table></div>
+    </div>
+  </div>
+  <div class="rem-box">
+    <div class="card-label">Patrimonio Neto = Activos − Pasivos (incluye stock automáticamente)</div>
+    <div class="rem-big" id="patriDisplay" style="color:var(--yellow);margin-top:8px">$0</div>
+    <div class="bar-c"><div class="bar-f bar-yellow" id="barPatri" style="width:0%"></div></div>
+    <div class="pct-lbl" id="patriPct">Calculando...</div>
+  </div>
+</div>
+
+<!-- REMANENTE -->
+<div class="panel" id="panel-remanente">
+  <div class="rem-box">
+    <div class="card-label">Remanente Neto — Mes Actual</div>
+    <div class="rem-big" id="remBig">$0</div>
+    <div class="bar-c"><div class="bar-f bar-green" id="barRem" style="width:50%"></div></div>
+    <div class="pct-lbl" id="remPct">Ingresos − Egresos</div>
+  </div>
+  <div class="two-col">
+    <div class="chart-wrap"><div class="chart-title">Proyección Remanente — 6 Meses</div><canvas id="cRem" height="200"></canvas></div>
+    <div class="chart-wrap" style="margin-bottom:0"><div class="chart-title">Resumen Proyectado</div><div id="remProyeccion"></div></div>
+  </div>
+  <div class="sep"></div>
+  <div class="section-header"><div class="section-title">Estrategias para mejorar el remanente</div></div>
+  <div class="tips-list" id="tipsList"></div>
+</div>
+
+<!-- INVERSIONES -->
+<div class="panel" id="panel-inversiones">
+  <div class="rem-box">
+    <div class="card-label" style="margin-bottom:6px">Remanente disponible para invertir (estimado)</div>
+    <div class="rem-big" id="invRem" style="color:var(--accent)">$0</div>
+    <div class="nota" id="invRemNota">50% del remanente promedio últimos 3 meses</div>
+  </div>
+  <div class="section-header"><div class="section-title">Opciones recomendadas — Argentina</div></div>
+  <div class="inv-grid">
+    <div class="inv-card selected" onclick="this.classList.toggle('selected')"><div class="inv-check">✓</div><div class="icon">📈</div><h3>FCI Money Market</h3><p>Liquidez inmediata. Rinde por encima de caja de ahorro. Ideal para el fondo operativo del taller.</p><div class="tir">~TNA plazo fijo −2% | Riesgo: BAJO</div></div>
+    <div class="inv-card" onclick="this.classList.toggle('selected')"><div class="inv-check">✓</div><div class="icon">🏦</div><h3>Plazo Fijo / UVA</h3><p>30 días mínimo. UVA para protegerte de la inflación. Para fondos que no necesitás en el mes.</p><div class="tir">TNA regulada BCRA | Riesgo: BAJO</div></div>
+    <div class="inv-card" onclick="this.classList.toggle('selected')"><div class="inv-check">✓</div><div class="icon">💵</div><h3>Dólar MEP</h3><p>Compra de dólares vía bolsa. No rinde pero preserva capital ante devaluación.</p><div class="tir">Protección de capital | Riesgo: BAJO-MEDIO</div></div>
+    <div class="inv-card" onclick="this.classList.toggle('selected')"><div class="inv-check">✓</div><div class="icon">📋</div><h3>LECAP / LEDE</h3><p>Letras del Tesoro en pesos. Más rentable que plazo fijo. Se compran vía homebanking o broker.</p><div class="tir">~3-5% TEM | Riesgo: BAJO-MEDIO</div></div>
+    <div class="inv-card" onclick="this.classList.toggle('selected')"><div class="inv-check">✓</div><div class="icon">🔧</div><h3>Herramienta / Equipo</h3><p>Ampliar capacidad del taller. Nuevo canal de scanner, osciloscopio, banco de programación. ROI directo.</p><div class="tir">ROI variable (+ facturación) | Riesgo: BAJO</div></div>
+    <div class="inv-card" onclick="this.classList.toggle('selected')"><div class="inv-check">✓</div><div class="icon">📦</div><h3>Stock Estratégico</h3><p>Comprar repuestos de alta rotación a buen precio. <strong>Solo si tenés el inventario controlado</strong> primero.</p><div class="tir">Margen de reventa | Riesgo: MEDIO (liquidez)</div></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">Simulador de Inversión</div>
+    <div class="form-row" style="background:transparent;border:none;padding:0">
+      <div class="form-group"><label>Capital ($)</label><input type="number" id="simCap" placeholder="0" oninput="simular()"></div>
+      <div class="form-group"><label>Plazo (meses)</label><input type="number" id="simPlazo" value="6" oninput="simular()"></div>
+      <div class="form-group"><label>TEM (%)</label><input type="number" id="simTem" value="4" oninput="simular()"></div>
+    </div>
+    <div id="simResult"></div>
+    <canvas id="cSim" height="130" style="margin-top:14px"></canvas>
+  </div>
+</div>
+
+<!-- AYUDA -->
+<div class="panel" id="panel-ayuda">
+  <div class="def-grid">
+    <div class="def-card"><h3 style="color:var(--green)"><span class="dot" style="background:var(--green)"></span>Activo</h3><p style="font-size:12px;color:var(--text2);line-height:1.6">Todo lo que <strong>tenés y tiene valor económico</strong>. Herramientas, stock, equipos, dinero, vehículos.</p></div>
+    <div class="def-card"><h3 style="color:var(--red)"><span class="dot" style="background:var(--red)"></span>Pasivo</h3><p style="font-size:12px;color:var(--text2);line-height:1.6">Todo lo que <strong>debés u obligaciones a pagar</strong>. Préstamos, tarjetas, impuestos, cuotas.</p></div>
+    <div class="def-card"><h3 style="color:var(--yellow)"><span class="dot" style="background:var(--yellow)"></span>Patrimonio Neto</h3><p style="font-size:12px;color:var(--text2);line-height:1.6"><strong>Activos − Pasivos.</strong> Tu riqueza real. Si es positivo vas bien. El objetivo es que crezca mes a mes.</p></div>
+    <div class="def-card"><h3 style="color:var(--accent)"><span class="dot" style="background:var(--accent)"></span>Remanente</h3><p style="font-size:12px;color:var(--text2);line-height:1.6"><strong>Ingresos − Egresos.</strong> Lo que queda libre para ahorrar o invertir. Si es negativo, gastás más de lo que ganás.</p></div>
+    <div class="def-card"><h3 style="color:var(--purple)"><span class="dot" style="background:var(--purple)"></span>Capital en Stock</h3><p style="font-size:12px;color:var(--text2);line-height:1.6">Plata invertida en repuestos sin usar ni vender. Es un <strong>activo sin liquidez</strong>. Demasiado stock = sin efectivo para operar.</p></div>
+    <div class="def-card"><h3 style="color:var(--warn)"><span class="dot" style="background:var(--warn)"></span>Gasto Compartido</h3><p style="font-size:12px;color:var(--text2);line-height:1.6">Gasto que usan tanto casa como negocio (alquiler, luz, gas). Se reparte según el % que definís en "Reparto".</p></div>
+  </div>
+  <div class="section-header"><div class="section-title">Regla 50 / 30 / 20</div></div>
+  <div class="tips-list">
+    <div class="tip"><strong>50% — Necesidades:</strong> Alquiler, servicios, alimentación, salud. Lo innegociable.</div>
+    <div class="tip info"><strong>30% — Deseos:</strong> Entretenimiento, ropa, salidas. Lo primero a reducir cuando falta remanente.</div>
+    <div class="tip"><strong>20% — Ahorro / Inversión:</strong> Este porcentaje de tus ingresos debería ir a ahorro o reinversión en el negocio. Apuntá a esto.</div>
+  </div>
+  <div class="section-header" style="margin-top:20px"><div class="section-title">Sobre los datos</div></div>
+  <div class="tip info"><strong>Datos guardados en este navegador (localStorage).</strong> Para usar en otro dispositivo: descargá el archivo HTML y abrilo ahí. Exportá los movimientos en CSV como respaldo. No requiere internet ni cuenta.</div>
+</div>
+
+</main>
+<!-- MODAL EDITAR MOVIMIENTO -->
+<div class="modal-overlay" id="modalMov">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">✏ Editar Movimiento</span><button class="modal-close" onclick="closeModal('modalMov')">✕</button></div>
+    <div class="form-row" style="background:transparent;border:none;padding:0">
+      <div class="form-group"><label>Fecha</label><input type="date" id="eMFecha"></div>
+      <div class="form-group"><label>Descripción</label><input type="text" id="eMDesc"></div>
+      <div class="form-group"><label>Tipo</label><select id="eMTipo"><option value="ingreso">Ingreso</option><option value="egreso">Egreso</option></select></div>
+      <div class="form-group"><label>Categoría</label>
+        <select id="eMCat">
+          <optgroup label="INGRESOS NEGOCIO"><option value="serv-diag">Diagnóstico / Escaneo</option><option value="serv-prog">Programación ECU/IMMO</option><option value="serv-mec">Servicio mecánico</option><option value="serv-elec">Reparación electrónica</option><option value="venta-rep">Venta repuesto</option><option value="ing-neg-otro">Otro ingreso negocio</option></optgroup>
+          <optgroup label="EGRESOS NEGOCIO"><option value="compra-rep">Compra repuesto (stock)</option><option value="insumos">Insumos / Materiales</option><option value="herram">Herramientas / Equipos</option><option value="impuestos">Impuestos / AFIP / IIBB</option><option value="internet-neg">Internet negocio</option><option value="eg-neg-otro">Otro egreso negocio</option></optgroup>
+          <optgroup label="COMPARTIDOS"><option value="alquiler">Alquiler</option><option value="luz">Electricidad</option><option value="gas">Gas</option><option value="internet">Internet hogar</option><option value="agua">Agua</option><option value="expensas">Expensas / ABL</option></optgroup>
+          <optgroup label="INGRESOS CASA"><option value="sueldo">Sueldo / Salario externo</option><option value="alq-cobrado">Alquiler cobrado</option><option value="ing-casa-otro">Otro ingreso casa</option></optgroup>
+          <optgroup label="EGRESOS CASA"><option value="alim">Alimentación</option><option value="salud">Salud / Farmacia</option><option value="educ">Educación</option><option value="transp">Transporte</option><option value="entret">Entretenimiento</option><option value="deuda">Pago deuda / cuota</option><option value="eg-casa-otro">Otro egreso casa</option></optgroup>
+        </select>
+      </div>
+      <div class="form-group"><label>Ámbito</label><select id="eMAmbito"><option value="negocio">Negocio</option><option value="casa">Casa</option><option value="compartido">Compartido</option></select></div>
+      <div class="form-group"><label>Monto ($)</label><input type="number" id="eMMonto" min="0"></div>
+      <div class="form-group"><label>Moneda</label><select id="eMMoneda"><option value="ARS">ARS</option><option value="USD">USD</option></select></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-sec" onclick="closeModal('modalMov')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarMov()">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR STOCK -->
+<div class="modal-overlay" id="modalStock">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">✏ Editar Ítem de Stock</span><button class="modal-close" onclick="closeModal('modalStock')">✕</button></div>
+    <div class="form-row" style="background:transparent;border:none;padding:0">
+      <div class="form-group"><label>Descripción</label><input type="text" id="eSDesc"></div>
+      <div class="form-group"><label>Categoría</label><select id="eSCat"><option value="electronico">Electrónico (ECU/módulo)</option><option value="sensor">Sensor</option><option value="electrico">Eléctrico</option><option value="mecanico">Mecánico</option><option value="otro">Otro</option></select></div>
+      <div class="form-group"><label>Condición</label><select id="eSCond"><option value="nuevo">Nuevo</option><option value="usado">Usado</option><option value="reparado">Reparado/Revisado</option></select></div>
+      <div class="form-group"><label>Vehículo / Aplicación</label><input type="text" id="eSVeh"></div>
+      <div class="form-group"><label>Costo compra ($)</label><input type="number" id="eSCosto" min="0"></div>
+      <div class="form-group"><label>Precio venta ($)</label><input type="number" id="eSVenta" min="0"></div>
+      <div class="form-group"><label>Cantidad</label><input type="number" id="eSCant" min="1"></div>
+      <div class="form-group"><label>Ubicación</label><input type="text" id="eSUbic"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-sec" onclick="closeModal('modalStock')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarStock()">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR ACTIVO/PASIVO -->
+<div class="modal-overlay" id="modalAP">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">✏ Editar Activo / Pasivo</span><button class="modal-close" onclick="closeModal('modalAP')">✕</button></div>
+    <div class="form-row" style="background:transparent;border:none;padding:0">
+      <div class="form-group"><label>Ítem</label><input type="text" id="eAPDesc"></div>
+      <div class="form-group"><label>Tipo</label><select id="eAPTipo"><option value="activo">Activo</option><option value="pasivo">Pasivo</option></select></div>
+      <div class="form-group"><label>Ámbito</label><select id="eAPAmbito"><option value="negocio">Negocio</option><option value="casa">Casa</option></select></div>
+      <div class="form-group"><label>Valor ($)</label><input type="number" id="eAPValor" min="0"></div>
+      <div class="form-group"><label>Moneda</label><select id="eAPMoneda"><option value="ARS">ARS</option><option value="USD">USD</option></select></div>
+      <div class="form-group"><label>Notas</label><input type="text" id="eAPNotas"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-sec" onclick="closeModal('modalAP')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarAP()">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// DATA
+let movs = JSON.parse(localStorage.getItem('iny_mov')||'[]');
+let aps  = JSON.parse(localStorage.getItem('iny_ap')||'[]');
+let stk  = JSON.parse(localStorage.getItem('iny_stk')||'[]');
+let repPct = parseInt(localStorage.getItem('iny_rep')||'40');
+
+function save(){
+  localStorage.setItem('iny_mov',JSON.stringify(movs));
+  localStorage.setItem('iny_ap',JSON.stringify(aps));
+  localStorage.setItem('iny_stk',JSON.stringify(stk));
+  localStorage.setItem('iny_rep',repPct+'');
+}
+
+// UI
+function showP(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  renderAll();
+}
+
+document.getElementById('hDate').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+document.getElementById('mFecha').value=new Date().toISOString().split('T')[0];
+document.getElementById('slReparto').value=repPct;
+
+// HELPERS
+const fmt=n=>'$'+Math.round(n).toLocaleString('es-AR');
+function mesAct(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+const CATS={'serv-diag':'Diagnóstico','serv-prog':'Prog ECU/IMMO','serv-mec':'Serv. mecánico','serv-elec':'Rep. electrónica','venta-rep':'Venta repuesto','ing-neg-otro':'Otro ing. neg','compra-rep':'Compra repuesto','insumos':'Insumos','herram':'Herramientas','impuestos':'Impuestos/AFIP','internet-neg':'Internet neg','eg-neg-otro':'Otro eg. neg','alquiler':'Alquiler','luz':'Electricidad','gas':'Gas','internet':'Internet hogar','agua':'Agua','expensas':'Expensas/ABL','sueldo':'Sueldo','alq-cobrado':'Alq. cobrado','ing-casa-otro':'Otro ing. casa','alim':'Alimentación','salud':'Salud','educ':'Educación','transp':'Transporte','entret':'Entretenimiento','deuda':'Pago deuda','eg-casa-otro':'Otro eg. casa'};
+const cLbl=c=>CATS[c]||c;
+
+function calcMes(m){
+  const mf=movs.filter(x=>x.fecha.startsWith(m));
+  const ing=mf.filter(x=>x.tipo==='ingreso').reduce((s,x)=>s+x.monto,0);
+  const eg=mf.filter(x=>x.tipo==='egreso').reduce((s,x)=>s+x.monto,0);
+  const compTot=mf.filter(x=>x.tipo==='egreso'&&x.ambito==='compartido').reduce((s,x)=>s+x.monto,0);
+  const ingNeg=mf.filter(x=>x.tipo==='ingreso'&&x.ambito==='negocio').reduce((s,x)=>s+x.monto,0);
+  const egNeg=mf.filter(x=>x.tipo==='egreso'&&x.ambito==='negocio').reduce((s,x)=>s+x.monto,0);
+  return{ing,eg,rem:ing-eg,compTot,ingNeg,egNeg,compNeg:compTot*(repPct/100)};
+}
+function getMeses(n){
+  const r=[];
+  for(let i=n-1;i>=0;i--){
+    const d=new Date();d.setMonth(d.getMonth()-i);
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    r.push({key,lbl:d.toLocaleDateString('es-AR',{month:'short',year:'2-digit'}),...calcMes(key)});
+  }
+  return r;
+}
+
+// MOVIMIENTOS
+function addMov(){
+  const f=document.getElementById('mFecha').value;
+  const d=document.getElementById('mDesc').value.trim();
+  const t=document.getElementById('mTipo').value;
+  const c=document.getElementById('mCat').value;
+  const a=document.getElementById('mAmbito').value;
+  const m=parseFloat(document.getElementById('mMonto').value);
+  const mo=document.getElementById('mMoneda').value;
+  if(!f||!d||isNaN(m)||m<=0){alert('Completá fecha, descripción y monto.');return;}
+  movs.push({id:Date.now(),fecha:f,desc:d,tipo:t,cat:c,ambito:a,monto:m,moneda:mo});
+  movs.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  save();renderAll();
+  document.getElementById('mDesc').value='';document.getElementById('mMonto').value='';
+}
+function delMov(id){movs=movs.filter(x=>x.id!==id);save();renderAll();}
+
+function renderMovTable(){
+  const fil=document.getElementById('filtroMes').value;
+  const meses=new Set(movs.map(m=>m.fecha.slice(0,7)));
+  const sel=document.getElementById('filtroMes');const cur=sel.value;
+  sel.innerHTML='<option value="">Todos</option>';
+  [...meses].sort().reverse().forEach(mes=>{
+    const[y,mo]=mes.split('-');
+    sel.innerHTML+=`<option value="${mes}"${cur===mes?' selected':''}>${new Date(y,mo-1).toLocaleDateString('es-AR',{year:'numeric',month:'long'})}</option>`;
+  });
+  const data=fil?movs.filter(m=>m.fecha.startsWith(fil)):movs;
+  const tb=document.getElementById('tMov');
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" class="empty">Sin movimientos</td></tr>';return;}
+  tb.innerHTML=data.map(m=>`<tr>
+    <td>${m.fecha}</td><td style="color:var(--text)">${m.desc}</td><td>${cLbl(m.cat)}</td>
+    <td><span class="badge badge-${m.ambito}">${m.ambito}</span></td>
+    <td><span class="badge ${m.tipo==='ingreso'?'badge-activo':'badge-pasivo'}">${m.tipo}</span></td>
+    <td class="${m.tipo==='ingreso'?'amount-pos':'amount-neg'}">${m.tipo==='ingreso'?'+':'-'}${fmt(m.monto)}</td>
+    <td style="color:var(--text3)">${m.moneda}</td>
+    <td style="white-space:nowrap"><button class="btn-edit" onclick="editMov(${m.id})">✏</button><button class="btn btn-danger" onclick="delMov(${m.id})">✕</button></td>
+  </tr>`).join('');
+}
+
+// STOCK
+function addStock(){
+  const d=document.getElementById('stDesc').value.trim();
+  if(!d){alert('Ingresá una descripción.');return;}
+  stk.push({
+    id:Date.now(),desc:d,
+    cat:document.getElementById('stCat').value,
+    cond:document.getElementById('stCond').value,
+    veh:document.getElementById('stVeh').value.trim(),
+    costo:parseFloat(document.getElementById('stCosto').value)||0,
+    venta:parseFloat(document.getElementById('stVenta').value)||0,
+    cant:parseInt(document.getElementById('stCant').value)||1,
+    ubic:document.getElementById('stUbic').value.trim()
+  });
+  save();renderAll();
+  ['stDesc','stVeh','stCosto','stVenta','stUbic'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('stCant').value='1';
+}
+function delStock(id){stk=stk.filter(x=>x.id!==id);save();renderAll();}
+
+function renderStock(){
+  const buscar=(document.getElementById('stBuscar')||{value:''}).value.toLowerCase();
+  const fc=(document.getElementById('stFiltCond')||{value:''}).value;
+  const tcosto=stk.reduce((s,i)=>s+i.costo*i.cant,0);
+  const tventa=stk.reduce((s,i)=>s+i.venta*i.cant,0);
+  const sinP=stk.filter(i=>!i.venta).length;
+  const nv=stk.filter(i=>i.cond==='nuevo').length;
+  const us=stk.filter(i=>i.cond==='usado').length;
+  document.getElementById('st-tcosto').textContent=fmt(tcosto);
+  document.getElementById('st-tventa').textContent=fmt(tventa);
+  document.getElementById('st-tganancia').textContent=fmt(tventa-tcosto);
+  document.getElementById('st-count').textContent=stk.length;
+  document.getElementById('st-count-sub').textContent=`${nv} nuevos / ${us} usados`;
+  document.getElementById('st-sinprecio').textContent=sinP;
+  document.getElementById('d-stock').textContent=fmt(tcosto);
+  document.getElementById('d-stock-sub').textContent=`${stk.length} ítems registrados`;
+  let data=stk;
+  if(buscar) data=data.filter(i=>i.desc.toLowerCase().includes(buscar)||i.veh.toLowerCase().includes(buscar)||i.cat.toLowerCase().includes(buscar));
+  if(fc) data=data.filter(i=>i.cond===fc);
+  const tb=document.getElementById('tStock');
+  if(!data.length){tb.innerHTML='<tr><td colspan="10" class="empty">Sin ítems</td></tr>';return;}
+  tb.innerHTML=data.map(i=>{
+    const mg=i.venta&&i.costo?((i.venta-i.costo)/i.costo*100).toFixed(0):null;
+    const cb=i.cond==='nuevo'?'badge-nuevo':i.cond==='usado'?'badge-usado':'badge-reparado';
+    return`<tr>
+      <td style="color:var(--text)">${i.desc}</td>
+      <td><span class="stag stag-${i.cat}">${i.cat}</span></td>
+      <td><span class="badge ${cb}">${i.cond}</span></td>
+      <td style="color:var(--text3)">${i.veh||'—'}</td>
+      <td>${i.cant}</td>
+      <td>${i.costo?fmt(i.costo):'<span style="color:var(--text3)">—</span>'}</td>
+      <td class="${i.venta?'amount-pos':''}">${i.venta?fmt(i.venta):'<span style="color:var(--warn)">Sin definir</span>'}</td>
+      <td class="${mg!==null?parseInt(mg)>0?'amount-pos':'amount-neg':''}">${mg!==null?mg+'%':'—'}</td>
+      <td style="color:var(--text3)">${i.ubic||'—'}</td>
+      <td style="white-space:nowrap"><button class="btn-edit" onclick="editStock(${i.id})">✏</button><button class="btn btn-danger" onclick="delStock(${i.id})">✕</button></td>
+    </tr>`;}).join('');
+  // Alertas dashboard
+  const al=document.getElementById('d-alertas');
+  let html='';
+  if(sinP>0) html+=`<div class="tip warn"><strong>${sinP} ítem${sinP>1?'s':''} sin precio de venta.</strong> Capital inmovilizado sin retorno definido. Entrá a Stock y fijales precio.</div>`;
+  if(tcosto>0) html+=`<div class="tip purple"><strong>Capital inmovilizado en stock: ${fmt(tcosto)}.</strong>${tventa>0?' Valor de venta potencial: '+fmt(tventa)+'.':''} Usá o vendé primero lo que tenés antes de comprar más.</div>`;
+  if(!html) html='<div class="tip info">Sin alertas de stock. <strong>Cargá tu inventario</strong> en la pestaña Stock para ver análisis de capital inmovilizado.</div>';
+  al.innerHTML=html;
+}
+
+// REPARTO
+function onReparto(){repPct=parseInt(document.getElementById('slReparto').value);save();renderReparto();}
+
+function renderReparto(){
+  document.getElementById('slReparto').value=repPct;
+  const cp=100-repPct;
+  document.getElementById('sfCasa').style.width=cp+'%';
+  document.getElementById('sfNeg').style.width=repPct+'%';
+  document.getElementById('lblCasa').textContent=`Casa ${cp}%`;
+  document.getElementById('lblNeg').textContent=`Neg ${repPct}%`;
+  const mes=mesAct();
+  const mf=movs.filter(m=>m.fecha.startsWith(mes)&&m.tipo==='egreso'&&m.ambito==='compartido');
+  const totComp=mf.reduce((s,m)=>s+m.monto,0);
+  const totCasa=totComp*(cp/100);const totNeg=totComp*(repPct/100);
+  document.getElementById('rCasa').textContent=fmt(totCasa);
+  document.getElementById('rNeg').textContent=fmt(totNeg);
+  document.getElementById('rCasaPct').textContent=`${cp}% de ${fmt(totComp)} en gastos compartidos`;
+  document.getElementById('rNegPct').textContent=`${repPct}% de ${fmt(totComp)} en gastos compartidos`;
+  document.getElementById('brCasa').style.width=cp+'%';
+  document.getElementById('brNeg').style.width=repPct+'%';
+  document.getElementById('d-costoneg').textContent=fmt(totNeg);
+  document.getElementById('d-costoneg-sub').textContent=`${repPct}% gastos compartidos`;
+  const tb=document.getElementById('tReparto');
+  tb.innerHTML=mf.length?mf.map(m=>`<tr>
+    <td style="color:var(--text)">${m.desc}</td><td class="amount-neg">${fmt(m.monto)}</td>
+    <td style="color:var(--text3)">${cp}%</td><td style="color:var(--yellow)">${fmt(m.monto*cp/100)}</td>
+    <td style="color:var(--text3)">${repPct}%</td><td style="color:var(--accent)">${fmt(m.monto*repPct/100)}</td>
+  </tr>`).join(''):'<tr><td colspan="6" class="empty">Sin gastos compartidos este mes</td></tr>';
+  const{ingNeg,egNeg}=calcMes(mes);
+  const rnT=ingNeg-egNeg-totNeg;
+  document.getElementById('rnIng').textContent=fmt(ingNeg);
+  document.getElementById('rnEg').textContent=fmt(egNeg);
+  document.getElementById('rnComp').textContent=fmt(totNeg);
+  const el=document.getElementById('rnTotal');
+  el.textContent=fmt(rnT);el.className='pv '+(rnT>=0?'pos':'neg');el.style.fontSize='16px';
+}
+
+// ACTIVOS / PASIVOS
+function addAP(){
+  const d=document.getElementById('apDesc').value.trim();
+  const v=parseFloat(document.getElementById('apValor').value);
+  if(!d||isNaN(v)||v<=0){alert('Completá descripción y valor.');return;}
+  aps.push({id:Date.now(),desc:d,tipo:document.getElementById('apTipo').value,ambito:document.getElementById('apAmbito').value,valor:v,moneda:document.getElementById('apMoneda').value,notas:document.getElementById('apNotas').value.trim()});
+  save();renderAP();
+}
+function delAP(id){aps=aps.filter(x=>x.id!==id);save();renderAP();}
+
+function renderAP(){
+  const activos=aps.filter(a=>a.tipo==='activo');
+  const pasivos=aps.filter(a=>a.tipo==='pasivo');
+  const stCap=stk.reduce((s,i)=>s+i.costo*i.cant,0);
+  const totA=activos.reduce((s,a)=>s+a.valor,0)+stCap;
+  const totP=pasivos.reduce((s,a)=>s+a.valor,0);
+  const patr=totA-totP;
+  document.getElementById('totActivos').textContent=fmt(totA);
+  document.getElementById('totPasivos').textContent=fmt(totP);
+  document.getElementById('patriDisplay').textContent=fmt(patr);
+  document.getElementById('d-patr').textContent=fmt(patr);
+  document.getElementById('d-patr').className='card-value '+(patr>=0?'':'negative');
+  const pct=totA>0?Math.min((totA/(totA+totP))*100,100):0;
+  document.getElementById('barPatri').style.width=pct+'%';
+  document.getElementById('barPatri').className='bar-f '+(patr>=0?'bar-yellow':'bar-red');
+  document.getElementById('patriPct').textContent=`Activos cubren el ${pct.toFixed(0)}% — Patrimonio ${patr>=0?'positivo ✓':'negativo ✗'}${stCap>0?' (incluye '+fmt(stCap)+' de stock)':''}`;
+  document.getElementById('tActivos').innerHTML=activos.length?
+    activos.map(a=>`<tr><td style="color:var(--text)">${a.desc}${a.notas?`<br><span style="color:var(--text3);font-size:10px">${a.notas}</span>`:''}</td><td><span class="badge badge-${a.ambito}">${a.ambito}</span></td><td style="color:var(--text3)">${a.moneda}</td><td class="amount-pos">${fmt(a.valor)}</td><td style="white-space:nowrap"><button class="btn-edit" onclick="editAP(${a.id})">✏</button><button class="btn btn-danger" onclick="delAP(${a.id})">✕</button></td></tr>`).join('')+(stCap>0?`<tr style="opacity:.6"><td style="color:var(--purple)">Stock de repuestos (automático)</td><td><span class="badge badge-negocio">negocio</span></td><td style="color:var(--text3)">ARS</td><td class="amount-pos">${fmt(stCap)}</td><td></td></tr>`:'')
+    :'<tr><td colspan="5" class="empty">Sin activos</td></tr>';
+  document.getElementById('tPasivos').innerHTML=pasivos.length?
+    pasivos.map(p=>`<tr><td style="color:var(--text)">${p.desc}${p.notas?`<br><span style="color:var(--text3);font-size:10px">${p.notas}</span>`:''}</td><td><span class="badge badge-${p.ambito}">${p.ambito}</span></td><td style="color:var(--text3)">${p.moneda}</td><td class="amount-neg">${fmt(p.valor)}</td><td style="white-space:nowrap"><button class="btn-edit" onclick="editAP(${p.id})">✏</button><button class="btn btn-danger" onclick="delAP(${p.id})">✕</button></td></tr>`).join('')
+    :'<tr><td colspan="5" class="empty">Sin pasivos</td></tr>';
+}
+
+// REMANENTE
+let cRem=null;
+function renderRemanente(){
+  const hist=getMeses(6);
+  const ma=hist[hist.length-1];
+  const prom=hist.reduce((s,m)=>s+m.rem,0)/hist.length;
+  document.getElementById('remBig').textContent=fmt(ma.rem);
+  document.getElementById('remBig').style.color=ma.rem>=0?'var(--accent)':'var(--red)';
+  const maxI=Math.max(...hist.map(m=>m.ing),1);
+  const pct=Math.max(0,Math.min(100,(ma.rem/maxI)*100));
+  document.getElementById('barRem').style.width=pct+'%';
+  document.getElementById('barRem').className='bar-f '+(ma.rem>=0?'bar-green':'bar-red');
+  document.getElementById('remPct').textContent=`${ma.ing>0?((ma.rem/ma.ing)*100).toFixed(1):0}% de los ingresos queda como remanente`;
+  const stCap=stk.reduce((s,i)=>s+i.costo*i.cant,0);
+  document.getElementById('remProyeccion').innerHTML=`
+    <div class="proj-row"><span class="pl">Remanente mes actual</span><span class="pv ${ma.rem>=0?'pos':'neg'}">${fmt(ma.rem)}</span></div>
+    <div class="proj-row"><span class="pl">Promedio 6 meses</span><span class="pv ${prom>=0?'pos':'neg'}">${fmt(prom)}</span></div>
+    <div class="proj-row"><span class="pl">Proyectado 3 meses</span><span class="pv ${prom*3>=0?'pos':'neg'}">${fmt(prom*3)}</span></div>
+    <div class="proj-row"><span class="pl">Proyectado 6 meses</span><span class="pv ${prom*6>=0?'pos':'neg'}">${fmt(prom*6)}</span></div>
+    <div class="proj-row"><span class="pl">Fondo emergencia (4 meses)</span><span class="pv">${fmt(ma.eg*4)}</span></div>
+    <div class="proj-row"><span class="pl">Capital inmovilizado en stock</span><span class="pv" style="color:var(--purple)">${fmt(stCap)}</span></div>
+  `;
+  const proy=Array.from({length:6},(_,i)=>prom*(i+1));
+  const pLbls=Array.from({length:6},(_,i)=>`M+${i+1}`);
+  const lbls=[...hist.map(m=>m.lbl),...pLbls];
+  const rd=[...hist.map(m=>m.rem),...Array(6).fill(null)];
+  const pd=[...Array(hist.length-1).fill(null),hist[hist.length-1].rem,...proy];
+  const ctx=document.getElementById('cRem').getContext('2d');
+  if(cRem)cRem.destroy();
+  cRem=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:[
+    {label:'Real',data:rd,borderColor:'#00e5a0',backgroundColor:'rgba(0,229,160,.1)',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:'#00e5a0'},
+    {label:'Proyectado',data:pd,borderColor:'#0090ff',borderDash:[5,5],tension:.3,pointRadius:2,fill:false}
+  ]},options:{plugins:{legend:{labels:{color:'#8892aa',font:{family:'IBM Plex Mono',size:10}}}},scales:{
+    x:{grid:{color:'#252a3a'},ticks:{color:'#55627a',font:{family:'IBM Plex Mono',size:10}}},
+    y:{grid:{color:'#252a3a'},ticks:{color:'#55627a',font:{family:'IBM Plex Mono',size:10},callback:v=>'$'+Math.round(v).toLocaleString('es-AR')}}
+  }}});
+  // Tips
+  const ratio=ma.ing>0?(ma.rem/ma.ing):0;
+  const stCapV=stk.reduce((s,i)=>s+i.costo*i.cant,0);
+  let html='';
+  if(ma.ing===0){html='<div class="tip warn"><strong>Sin datos del mes.</strong> Cargá ingresos y egresos para obtener análisis.</div>';}
+  else{
+    if(ratio<0) html+=`<div class="tip danger"><strong>⚠ Déficit de ${fmt(Math.abs(ma.rem))}:</strong> Tus egresos superan los ingresos. Es urgente reducir gastos o aumentar facturación.</div>`;
+    else if(ratio<0.1) html+=`<div class="tip warn"><strong>Remanente muy bajo (${(ratio*100).toFixed(1)}%):</strong> Menos del 10%. Revisá cada categoría de egreso.</div>`;
+    else html+=`<div class="tip"><strong>Remanente de ${(ratio*100).toFixed(1)}%:</strong> ${ratio>=0.2?'Buen margen. Invertí al menos la mitad del remanente.':'Margen ajustado. Intentá llegar al 20%.'}</div>`;
+    if(stCapV>ma.ing*0.5) html+=`<div class="tip warn"><strong>Stock alto vs ingresos:</strong> Tenés ${fmt(stCapV)} inmovilizados en repuestos. Usá o vendé lo que tenés antes de comprar más para no quedarte sin liquidez.</div>`;
+    html+=`<div class="tip purple"><strong>Antes de comprar un repuesto:</strong> Verificá siempre en tu stock si ya lo tenés. Evitás duplicar compras y recuperás liquidez usando lo que ya pagaste.</div>`;
+    html+=`<div class="tip info"><strong>Separación de fondos:</strong> Al cobrar cada trabajo, separá automáticamente un 15-20% en cuenta/sobre de ahorro antes de tocar el resto.</div>`;
+    const catEg={};
+    movs.filter(m=>m.tipo==='egreso'&&m.fecha.startsWith(mesAct())).forEach(m=>{catEg[m.cat]=(catEg[m.cat]||0)+m.monto;});
+    const top=Object.entries(catEg).sort((a,b)=>b[1]-a[1])[0];
+    if(top) html+=`<div class="tip warn"><strong>Mayor egreso del mes:</strong> "${cLbl(top[0])}" con ${fmt(top[1])}. ¿Podés reducirlo?</div>`;
+  }
+  document.getElementById('tipsList').innerHTML=html;
+}
+
+// DASHBOARD CHARTS
+let cFlujo=null,cEg=null;
+function renderDashboard(){
+  const mes=mesAct();
+  const{ing,eg,rem}=calcMes(mes);
+  document.getElementById('d-ing').textContent=fmt(ing);
+  document.getElementById('d-eg').textContent=fmt(eg);
+  document.getElementById('d-rem').textContent=fmt(rem);
+  document.getElementById('d-rem').className='card-value '+(rem>=0?'highlight':'negative');
+  const rec=movs.slice(0,6);
+  document.getElementById('d-recientes').innerHTML=rec.length?`<table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Ámbito</th><th>Monto</th></tr></thead><tbody>${rec.map(m=>`<tr><td>${m.fecha}</td><td style="color:var(--text)">${m.desc}</td><td><span class="badge ${m.tipo==='ingreso'?'badge-activo':'badge-pasivo'}">${m.tipo}</span></td><td><span class="badge badge-${m.ambito}">${m.ambito}</span></td><td class="${m.tipo==='ingreso'?'amount-pos':'amount-neg'}">${m.tipo==='ingreso'?'+':'-'}${fmt(m.monto)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">Sin movimientos</div>';
+  const ingC=movs.filter(m=>m.tipo==='ingreso'&&m.fecha.startsWith(mes)&&m.ambito==='casa').reduce((s,m)=>s+m.monto,0);
+  const ingN=movs.filter(m=>m.tipo==='ingreso'&&m.fecha.startsWith(mes)&&m.ambito==='negocio').reduce((s,m)=>s+m.monto,0);
+  const egC=movs.filter(m=>m.tipo==='egreso'&&m.fecha.startsWith(mes)&&m.ambito==='casa').reduce((s,m)=>s+m.monto,0);
+  const egN=movs.filter(m=>m.tipo==='egreso'&&m.fecha.startsWith(mes)&&m.ambito==='negocio').reduce((s,m)=>s+m.monto,0);
+  const egCo=movs.filter(m=>m.tipo==='egreso'&&m.fecha.startsWith(mes)&&m.ambito==='compartido').reduce((s,m)=>s+m.monto,0);
+  const ctx1=document.getElementById('cFlujo').getContext('2d');
+  if(cFlujo)cFlujo.destroy();
+  cFlujo=new Chart(ctx1,{type:'bar',data:{labels:['Casa','Negocio','Compartido'],datasets:[{label:'Ingresos',data:[ingC,ingN,0],backgroundColor:'rgba(0,200,122,.7)',borderRadius:4},{label:'Egresos',data:[egC,egN,egCo],backgroundColor:'rgba(255,61,90,.7)',borderRadius:4}]},options:{plugins:{legend:{labels:{color:'#8892aa',font:{family:'IBM Plex Mono',size:10}}}},scales:{x:{grid:{color:'#252a3a'},ticks:{color:'#55627a',font:{family:'IBM Plex Mono',size:10}}},y:{grid:{color:'#252a3a'},ticks:{color:'#55627a',font:{family:'IBM Plex Mono',size:10},callback:v=>'$'+Math.round(v).toLocaleString('es-AR')}}}}});
+  const cats={};
+  movs.filter(m=>m.tipo==='egreso'&&m.fecha.startsWith(mes)).forEach(m=>{cats[cLbl(m.cat)]=(cats[cLbl(m.cat)]||0)+m.monto;});
+  const ctx2=document.getElementById('cEg').getContext('2d');
+  if(cEg)cEg.destroy();
+  if(Object.keys(cats).length){
+    cEg=new Chart(ctx2,{type:'doughnut',data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:['#ff3d5a','#ff6b35','#ffc107','#0090ff','#a855f7','#ec4899','#14b8a6','#f59e0b'],borderWidth:0}]},options:{plugins:{legend:{labels:{color:'#8892aa',font:{family:'IBM Plex Mono',size:10},boxWidth:10}}}}});
+  }
+}
+
+// INVERSIONES
+let cSim=null;
+function renderInversiones(){
+  const hist=getMeses(3);
+  const prom=hist.reduce((s,m)=>s+m.rem,0)/hist.length;
+  const r50=Math.max(0,prom*0.5);
+  document.getElementById('invRem').textContent=fmt(r50);
+  document.getElementById('invRemNota').textContent=`50% del remanente promedio (últimos 3 meses): ${fmt(prom)}/mes`;
+  if(!document.getElementById('simCap').value){document.getElementById('simCap').value=Math.round(r50);simular();}
+}
+function simular(){
+  const cap=parseFloat(document.getElementById('simCap').value)||0;
+  const pl=parseInt(document.getElementById('simPlazo').value)||6;
+  const tem=parseFloat(document.getElementById('simTem').value)/100||0.04;
+  if(cap<=0)return;
+  const vals=[cap];for(let i=1;i<=pl;i++)vals.push(vals[i-1]*(1+tem));
+  const tot=vals[pl];const gan=tot-cap;
+  document.getElementById('simResult').innerHTML=`<div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px"><div><div class="card-label">Capital</div><div class="card-value neutral" style="font-size:15px">${fmt(cap)}</div></div><div><div class="card-label">Total mes ${pl}</div><div class="card-value positive" style="font-size:15px">${fmt(tot)}</div></div><div><div class="card-label">Ganancia</div><div class="card-value positive" style="font-size:15px">${fmt(gan)}</div></div></div>`;
+  const ctx=document.getElementById('cSim').getContext('2d');
+  if(cSim)cSim.destroy();
+  cSim=new Chart(ctx,{type:'line',data:{labels:Array.from({length:pl+1},(_,i)=>i===0?'Hoy':`M${i}`),datasets:[{label:'Capital',data:vals,borderColor:'#00e5a0',backgroundColor:'rgba(0,229,160,.1)',fill:true,tension:.3,pointBackgroundColor:'#00e5a0',pointRadius:3}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'#252a3a'},ticks:{color:'#55627a',font:{family:'IBM Plex Mono',size:10}}},y:{grid:{color:'#252a3a'},ticks:{color:'#55627a',font:{family:'IBM Plex Mono',size:10},callback:v=>'$'+Math.round(v).toLocaleString('es-AR')}}}}});
+}
+
+// MODAL HELPERS
+let editingId=null;
+function closeModal(id){document.getElementById(id).classList.remove('open');editingId=null;}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){['modalMov','modalStock','modalAP'].forEach(closeModal);}});
+['modalMov','modalStock','modalAP'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal(id);});});
+
+// EDITAR MOVIMIENTO
+function editMov(id){
+  const m=movs.find(x=>x.id===id);if(!m)return;
+  editingId=id;
+  document.getElementById('eMFecha').value=m.fecha;
+  document.getElementById('eMDesc').value=m.desc;
+  document.getElementById('eMTipo').value=m.tipo;
+  document.getElementById('eMCat').value=m.cat;
+  document.getElementById('eMAmbito').value=m.ambito;
+  document.getElementById('eMMonto').value=m.monto;
+  document.getElementById('eMMoneda').value=m.moneda;
+  document.getElementById('modalMov').classList.add('open');
+}
+function guardarMov(){
+  const f=document.getElementById('eMFecha').value;
+  const d=document.getElementById('eMDesc').value.trim();
+  const mo=parseFloat(document.getElementById('eMMonto').value);
+  if(!f||!d||isNaN(mo)||mo<=0){alert('Completá todos los campos.');return;}
+  const i=movs.findIndex(x=>x.id===editingId);
+  if(i>=0){movs[i]={...movs[i],fecha:f,desc:d,tipo:document.getElementById('eMTipo').value,cat:document.getElementById('eMCat').value,ambito:document.getElementById('eMAmbito').value,monto:mo,moneda:document.getElementById('eMMoneda').value};}
+  movs.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  save();closeModal('modalMov');renderAll();
+}
+
+// EDITAR STOCK
+function editStock(id){
+  const s=stk.find(x=>x.id===id);if(!s)return;
+  editingId=id;
+  document.getElementById('eSDesc').value=s.desc;
+  document.getElementById('eSCat').value=s.cat;
+  document.getElementById('eSCond').value=s.cond;
+  document.getElementById('eSVeh').value=s.veh||'';
+  document.getElementById('eSCosto').value=s.costo||'';
+  document.getElementById('eSVenta').value=s.venta||'';
+  document.getElementById('eSCant').value=s.cant||1;
+  document.getElementById('eSUbic').value=s.ubic||'';
+  document.getElementById('modalStock').classList.add('open');
+}
+function guardarStock(){
+  const d=document.getElementById('eSDesc').value.trim();
+  if(!d){alert('Ingresá descripción.');return;}
+  const i=stk.findIndex(x=>x.id===editingId);
+  if(i>=0){stk[i]={...stk[i],desc:d,cat:document.getElementById('eSCat').value,cond:document.getElementById('eSCond').value,veh:document.getElementById('eSVeh').value.trim(),costo:parseFloat(document.getElementById('eSCosto').value)||0,venta:parseFloat(document.getElementById('eSVenta').value)||0,cant:parseInt(document.getElementById('eSCant').value)||1,ubic:document.getElementById('eSUbic').value.trim()};}
+  save();closeModal('modalStock');renderAll();
+}
+
+// EDITAR ACTIVO/PASIVO
+function editAP(id){
+  const a=aps.find(x=>x.id===id);if(!a)return;
+  editingId=id;
+  document.getElementById('eAPDesc').value=a.desc;
+  document.getElementById('eAPTipo').value=a.tipo;
+  document.getElementById('eAPAmbito').value=a.ambito;
+  document.getElementById('eAPValor').value=a.valor;
+  document.getElementById('eAPMoneda').value=a.moneda;
+  document.getElementById('eAPNotas').value=a.notas||'';
+  document.getElementById('modalAP').classList.add('open');
+}
+function guardarAP(){
+  const d=document.getElementById('eAPDesc').value.trim();
+  const v=parseFloat(document.getElementById('eAPValor').value);
+  if(!d||isNaN(v)||v<=0){alert('Completá descripción y valor.');return;}
+  const i=aps.findIndex(x=>x.id===editingId);
+  if(i>=0){aps[i]={...aps[i],desc:d,tipo:document.getElementById('eAPTipo').value,ambito:document.getElementById('eAPAmbito').value,valor:v,moneda:document.getElementById('eAPMoneda').value,notas:document.getElementById('eAPNotas').value.trim()};}
+  save();closeModal('modalAP');renderAP();
+}
+
+// EXPORT
+function exportCSV(){
+  if(!movs.length){alert('Sin movimientos.');return;}
+  const h=['Fecha','Descripcion','Tipo','Categoria','Ambito','Moneda','Monto'];
+  const r=movs.map(m=>[m.fecha,m.desc,m.tipo,cLbl(m.cat),m.ambito,m.moneda,m.monto]);
+  const csv=[h,...r].map(x=>x.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('\uFEFF'+csv);
+  a.download=`inyelab-${mesAct()}.csv`;a.click();
+}
+
+// FIREBASE SYNC
+const fbConfig={
+  apiKey:'AIzaSyCPujNnyftFWInwvPENm9_6PNi8E4Yfi_4',
+  authDomain:'inyelab-finanzas-3acc6.firebaseapp.com',
+  databaseURL:'https://inyelab-finanzas-3acc6-default-rtdb.firebaseio.com',
+  projectId:'inyelab-finanzas-3acc6'
+};
+firebase.initializeApp(fbConfig);
+const fbAuth=firebase.auth();
+const fbDb=firebase.database();
+let fbUser=null;
+let syncTimeout=null;
+let isSyncing=false;
+let fbRef=null;
+
+function setSyncStatus(state,msg){
+  const dot=document.getElementById('syncDot');
+  const txt=document.getElementById('syncTxt');
+  const btn=document.getElementById('syncBtn');
+  txt.textContent=msg;
+  dot.className='sync-dot '+(state==='ok'?'green':state==='syncing'?'yellow':'grey');
+  if(state==='ok'){btn.textContent='☁ Sincronizado';btn.className='sync-btn syncing';}
+  else if(state==='syncing'){btn.textContent='↻ Sincronizando...';btn.className='sync-btn syncing';}
+  else if(state==='error'){btn.textContent='☁ Reconectar';btn.className='sync-btn error';btn.onclick=handleSync;}
+  else{btn.textContent='☁ Conectar';btn.className='sync-btn connect';btn.onclick=handleSync;}
+}
+
+function handleSync(){
+  if(fbUser){saveToFirebase(true);}
+  else{loginFirebase();}
+}
+
+function loginFirebase(){
+  setSyncStatus('syncing','Conectando...');
+  const provider=new firebase.auth.GoogleAuthProvider();
+  fbAuth.signInWithPopup(provider)
+    .then(result=>{fbUser=result.user;onLogin();})
+    .catch(e=>{setSyncStatus('error','Error: '+e.message);});
+}
+
+function onLogin(){
+  setSyncStatus('syncing','Cargando datos...');
+  fbRef=fbDb.ref('users/'+fbUser.uid+'/datos');
+  fbRef.once('value').then(snap=>{
+    const remote=snap.val();
+    const localTs=parseInt(localStorage.getItem('iny_ts')||'0');
+    const remoteTs=remote&&remote.ts?remote.ts:0;
+    if(remote&&remoteTs>localTs){
+      if(remote.movs) movs=remote.movs;
+      if(remote.aps) aps=remote.aps;
+      if(remote.stk) stk=remote.stk;
+      if(remote.repPct!==undefined) repPct=remote.repPct;
+      localStorage.setItem('iny_mov',JSON.stringify(movs));
+      localStorage.setItem('iny_ap',JSON.stringify(aps));
+      localStorage.setItem('iny_stk',JSON.stringify(stk));
+      localStorage.setItem('iny_rep',repPct+'');
+      localStorage.setItem('iny_ts',remoteTs+'');
+      renderAll();
+      setSyncStatus('ok','Datos cargados ✓ '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}));
+    } else if(localTs>0){
+      saveToFirebase(true);
+    } else {
+      setSyncStatus('ok','Sincronizado ✓');
+    }
+    fbRef.on('value',snap=>{
+      const r=snap.val();
+      if(!r)return;
+      const lts=parseInt(localStorage.getItem('iny_ts')||'0');
+      if(r.ts&&r.ts>lts+2000){
+        if(r.movs) movs=r.movs;
+        if(r.aps) aps=r.aps;
+        if(r.stk) stk=r.stk;
+        if(r.repPct!==undefined) repPct=r.repPct;
+        localStorage.setItem('iny_mov',JSON.stringify(movs));
+        localStorage.setItem('iny_ap',JSON.stringify(aps));
+        localStorage.setItem('iny_stk',JSON.stringify(stk));
+        localStorage.setItem('iny_rep',repPct+'');
+        localStorage.setItem('iny_ts',r.ts+'');
+        renderAll();
+        setSyncStatus('ok','Actualizado ✓ '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}));
+      }
+    });
+  }).catch(e=>{setSyncStatus('error','Error cargando');});
+}
+
+function saveToFirebase(immediate=false){
+  if(!fbUser||!fbRef)return;
+  clearTimeout(syncTimeout);
+  const doSave=()=>{
+    if(isSyncing)return;
+    isSyncing=true;
+    setSyncStatus('syncing','Guardando...');
+    const ts=Date.now();
+    localStorage.setItem('iny_ts',ts+'');
+    fbRef.set({movs,aps,stk,repPct,ts,v:2})
+      .then(()=>{setSyncStatus('ok','Guardado ✓ '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}));isSyncing=false;})
+      .catch(e=>{setSyncStatus('error','Error guardando');isSyncing=false;});
+  };
+  if(immediate) doSave();
+  else syncTimeout=setTimeout(doSave,3000);
+}
+
+// Override save to also sync
+const _origSave=save;
+function save(){
+  _origSave();
+  saveToFirebase();
+}
+
+// Auto login si ya habia sesion
+fbAuth.onAuthStateChanged(user=>{
+  if(user){fbUser=user;setSyncStatus('syncing','Reconectando...');onLogin();}
+  else{setSyncStatus('off','Sin conectar');}
+});
+
+// RENDER ALL
+function renderAll(){
+  renderDashboard();renderMovTable();renderStock();renderReparto();renderAP();renderRemanente();renderInversiones();
+}
+renderAll();
+</script>
+</body>
+</html>
