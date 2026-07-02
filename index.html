@@ -148,7 +148,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
     <div class="sync-bar">
       <span class="sync-status"><span class="sync-dot grey" id="syncDot"></span><span id="syncTxt">Sin conectar</span></span>
-      <button class="sync-btn connect" id="syncBtn" onclick="handleSync()">☁ Conectar Drive</button>
+      <button class="sync-btn connect" id="syncBtn" onclick="handleSync()">☁ Conectar</button>
     </div>
     <div class="header-date" id="hDate"></div>
   </div>
@@ -167,6 +167,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
 <!-- DASHBOARD -->
 <div class="panel active" id="panel-resumen">
+  <div class="month-sel" style="margin-bottom:16px">
+    <label>Ver mes:</label>
+    <select id="dashMes" onchange="renderDashboard()"><option value="">Mes actual</option></select>
+  </div>
   <div class="summary-grid">
     <div class="card green"><div class="card-label">Ingresos del Mes</div><div class="card-value positive" id="d-ing">$0</div><div class="card-sub">Casa + Negocio</div></div>
     <div class="card red"><div class="card-label">Egresos del Mes</div><div class="card-value negative" id="d-eg">$0</div><div class="card-sub">Casa + Negocio</div></div>
@@ -191,7 +195,11 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <label>Mes:</label>
     <select id="filtroMes" onchange="renderMovTable()"><option value="">Todos</option></select>
     <button class="btn btn-sm btn-sec" onclick="exportCSV()">Exportar CSV</button>
+    <button class="btn btn-sm btn-sec" onclick="exportBackup()">⬇ Backup JSON</button>
+    <button class="btn btn-sm btn-sec" onclick="document.getElementById('importFile').click()">⬆ Importar Backup</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
   </div>
+  <div style="margin-bottom:12px"><input class="search-input" id="movBuscar" placeholder="Buscar en movimientos: descripción, categoría, ámbito..." oninput="renderMovTable()" style="max-width:500px"></div>
   <div class="form-row">
     <div class="form-group"><label>Fecha</label><input type="date" id="mFecha"></div>
     <div class="form-group"><label>Descripción</label><input type="text" id="mDesc" placeholder="Ej: Diagnóstico Sandero..."></div>
@@ -546,11 +554,12 @@ function showP(id,el){
 }
 
 document.getElementById('hDate').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-document.getElementById('mFecha').value=new Date().toISOString().split('T')[0];
+document.getElementById('mFecha').value=fechaLocal();
 document.getElementById('slReparto').value=repPct;
 
 // HELPERS
 const fmt=n=>'$'+Math.round(n).toLocaleString('es-AR');
+function fechaLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function mesAct(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 const CATS={'serv-diag':'Diagnóstico','serv-prog':'Prog ECU/IMMO','serv-mec':'Serv. mecánico','serv-elec':'Rep. electrónica','venta-rep':'Venta repuesto','ing-neg-otro':'Otro ing. neg','compra-rep':'Compra repuesto','insumos':'Insumos','herram':'Herramientas','impuestos':'Impuestos/AFIP','internet-neg':'Internet neg','eg-neg-otro':'Otro eg. neg','alquiler':'Alquiler','luz':'Electricidad','gas':'Gas','internet':'Internet hogar','agua':'Agua','expensas':'Expensas/ABL','sueldo':'Sueldo','alq-cobrado':'Alq. cobrado','ing-casa-otro':'Otro ing. casa','alim':'Alimentación','salud':'Salud','educ':'Educación','transp':'Transporte','entret':'Entretenimiento','deuda':'Pago deuda','eg-casa-otro':'Otro eg. casa'};
 const cLbl=c=>CATS[c]||c;
@@ -600,7 +609,9 @@ function renderMovTable(){
     const[y,mo]=mes.split('-');
     sel.innerHTML+=`<option value="${mes}"${cur===mes?' selected':''}>${new Date(y,mo-1).toLocaleDateString('es-AR',{year:'numeric',month:'long'})}</option>`;
   });
-  const data=fil?movs.filter(m=>m.fecha.startsWith(fil)):movs;
+  let data=fil?movs.filter(m=>m.fecha.startsWith(fil)):movs;
+  const buscar=(document.getElementById('movBuscar')||{value:''}).value.toLowerCase().trim();
+  if(buscar) data=data.filter(m=>(m.desc||'').toLowerCase().includes(buscar)||cLbl(m.cat).toLowerCase().includes(buscar)||(m.ambito||'').toLowerCase().includes(buscar)||(m.tipo||'').toLowerCase().includes(buscar)||String(m.monto).includes(buscar));
   const tb=document.getElementById('tMov');
   if(!data.length){tb.innerHTML='<tr><td colspan="8" class="empty">Sin movimientos</td></tr>';return;}
   tb.innerHTML=data.map(m=>`<tr>
@@ -808,7 +819,14 @@ function renderRemanente(){
 // DASHBOARD CHARTS
 let cFlujo=null,cEg=null;
 function renderDashboard(){
-  const mes=mesAct();
+  // Poblar selector de meses
+  const dsel=document.getElementById('dashMes');
+  if(dsel){
+    const cur=dsel.value;
+    const meses=[...new Set(movs.map(m=>m.fecha.slice(0,7)))].sort().reverse();
+    dsel.innerHTML='<option value="">Mes actual</option>'+meses.map(mm=>{const[y,mo]=mm.split('-');return `<option value="${mm}"${cur===mm?' selected':''}>${new Date(y,mo-1).toLocaleDateString('es-AR',{year:'numeric',month:'long'})}</option>`;}).join('');
+  }
+  const mes=(dsel&&dsel.value)?dsel.value:mesAct();
   const{ing,eg,rem}=calcMes(mes);
   document.getElementById('d-ing').textContent=fmt(ing);
   document.getElementById('d-eg').textContent=fmt(eg);
@@ -938,6 +956,43 @@ function exportCSV(){
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('\uFEFF'+csv);
   a.download=`inyelab-${mesAct()}.csv`;a.click();
+}
+
+function exportBackup(){
+  const data={movs,aps,stk,repPct,v:2,fecha:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const hoy=fechaLocal();
+  a.download=`inyelab-backup-${hoy}.json`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+function importBackup(ev){
+  const file=ev.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=r=>{
+    try{
+      const d=JSON.parse(r.result);
+      const nMov=(d.movs||[]).length, nStk=(d.stk||[]).length, nAp=(d.aps||[]).length;
+      if(!confirm(`El backup contiene:\n- ${nMov} movimientos\n- ${nStk} ítems de stock\n- ${nAp} activos/pasivos\n\n¿Reemplazar los datos actuales por estos? (Se pierde lo que tengas cargado ahora si no lo respaldaste)`)){
+        ev.target.value='';return;
+      }
+      if(d.movs) movs=d.movs;
+      if(d.aps) aps=d.aps;
+      if(d.stk) stk=d.stk;
+      if(d.repPct!==undefined) repPct=d.repPct;
+      save();
+      renderAll();
+      alert('Datos importados correctamente ✓');
+    }catch(e){
+      alert('Error: el archivo no es un backup válido.\n'+e.message);
+    }
+    ev.target.value='';
+  };
+  reader.readAsText(file);
 }
 
 // FIREBASE SYNC
