@@ -259,6 +259,11 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <table><thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Ámbito</th><th>Tipo</th><th>Monto</th><th>Mon.</th><th></th></tr></thead>
     <tbody id="tMov"><tr><td colspan="8" class="empty">Sin movimientos</td></tr></tbody></table>
   </div>
+  <div id="movTotales" class="summary-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:4px">
+    <div class="card green"><div class="card-label">Ingresos (filtrado)</div><div class="card-value positive" id="totIng">$0</div><div class="card-sub" id="totIngN">0 movimientos</div></div>
+    <div class="card red"><div class="card-label">Egresos (filtrado)</div><div class="card-value negative" id="totEg">$0</div><div class="card-sub" id="totEgN">0 movimientos</div></div>
+    <div class="card accent"><div class="card-label">Neto (Ing − Eg)</div><div class="card-value highlight" id="totNeto">$0</div><div class="card-sub" id="totNetoN">Resultado del filtro</div></div>
+  </div>
 </div>
 
 <!-- STOCK -->
@@ -612,6 +617,22 @@ function renderMovTable(){
   let data=fil?movs.filter(m=>m.fecha.startsWith(fil)):movs;
   const buscar=(document.getElementById('movBuscar')||{value:''}).value.toLowerCase().trim();
   if(buscar) data=data.filter(m=>(m.desc||'').toLowerCase().includes(buscar)||cLbl(m.cat).toLowerCase().includes(buscar)||(m.ambito||'').toLowerCase().includes(buscar)||(m.tipo||'').toLowerCase().includes(buscar)||String(m.monto).includes(buscar));
+  // Totales del filtro actual
+  const tIng=data.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+m.monto,0);
+  const tEg=data.filter(m=>m.tipo==='egreso').reduce((s,m)=>s+m.monto,0);
+  const nIng=data.filter(m=>m.tipo==='ingreso').length;
+  const nEg=data.filter(m=>m.tipo==='egreso').length;
+  const neto=tIng-tEg;
+  const gTotIng=document.getElementById('totIng');
+  if(gTotIng){
+    gTotIng.textContent=fmt(tIng);
+    document.getElementById('totEg').textContent=fmt(tEg);
+    document.getElementById('totNeto').textContent=fmt(neto);
+    document.getElementById('totNeto').className='card-value '+(neto>=0?'highlight':'negative');
+    document.getElementById('totIngN').textContent=nIng+' movimiento'+(nIng===1?'':'s');
+    document.getElementById('totEgN').textContent=nEg+' movimiento'+(nEg===1?'':'s');
+    document.getElementById('totNetoN').textContent=(fil||buscar)?'Resultado del filtro':'Todos los movimientos';
+  }
   const tb=document.getElementById('tMov');
   if(!data.length){tb.innerHTML='<tr><td colspan="8" class="empty">Sin movimientos</td></tr>';return;}
   tb.innerHTML=data.map(m=>`<tr>
