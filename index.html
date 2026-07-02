@@ -976,19 +976,27 @@ function importBackup(ev){
   reader.onload=r=>{
     try{
       const d=JSON.parse(r.result);
+      // Aceptar cualquier backup que tenga al menos uno de los campos de datos
+      const tieneMovs=Array.isArray(d.movs);
+      const tieneStk=Array.isArray(d.stk);
+      const tieneAps=Array.isArray(d.aps);
+      if(!tieneMovs&&!tieneStk&&!tieneAps){
+        alert('El archivo no parece un backup de la planilla (no contiene movimientos, stock ni activos).');
+        ev.target.value='';return;
+      }
       const nMov=(d.movs||[]).length, nStk=(d.stk||[]).length, nAp=(d.aps||[]).length;
       if(!confirm(`El backup contiene:\n- ${nMov} movimientos\n- ${nStk} ítems de stock\n- ${nAp} activos/pasivos\n\n¿Reemplazar los datos actuales por estos? (Se pierde lo que tengas cargado ahora si no lo respaldaste)`)){
         ev.target.value='';return;
       }
-      if(d.movs) movs=d.movs;
-      if(d.aps) aps=d.aps;
-      if(d.stk) stk=d.stk;
+      if(tieneMovs) movs=d.movs;
+      if(tieneAps) aps=d.aps;
+      if(tieneStk) stk=d.stk;
       if(d.repPct!==undefined) repPct=d.repPct;
       save();
       renderAll();
       alert('Datos importados correctamente ✓');
     }catch(e){
-      alert('Error: el archivo no es un backup válido.\n'+e.message);
+      alert('Error: el archivo no es un JSON válido.\n'+e.message);
     }
     ev.target.value='';
   };
