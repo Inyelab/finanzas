@@ -537,7 +537,7 @@ let aps  = JSON.parse(localStorage.getItem('iny_ap')||'[]');
 let stk  = JSON.parse(localStorage.getItem('iny_stk')||'[]');
 let repPct = parseInt(localStorage.getItem('iny_rep')||'40');
 
-function save(){
+function saveLocal(){
   localStorage.setItem('iny_mov',JSON.stringify(movs));
   localStorage.setItem('iny_ap',JSON.stringify(aps));
   localStorage.setItem('iny_stk',JSON.stringify(stk));
@@ -969,38 +969,38 @@ function exportBackup(){
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 
-function importBackup(ev){
+async function importBackup(ev){
   const file=ev.target.files[0];
   if(!file)return;
-  const reader=new FileReader();
-  reader.onload=r=>{
-    try{
-      const d=JSON.parse(r.result);
-      // Aceptar cualquier backup que tenga al menos uno de los campos de datos
-      const tieneMovs=Array.isArray(d.movs);
-      const tieneStk=Array.isArray(d.stk);
-      const tieneAps=Array.isArray(d.aps);
-      if(!tieneMovs&&!tieneStk&&!tieneAps){
-        alert('El archivo no parece un backup de la planilla (no contiene movimientos, stock ni activos).');
-        ev.target.value='';return;
-      }
-      const nMov=(d.movs||[]).length, nStk=(d.stk||[]).length, nAp=(d.aps||[]).length;
-      if(!confirm(`El backup contiene:\n- ${nMov} movimientos\n- ${nStk} ítems de stock\n- ${nAp} activos/pasivos\n\n¿Reemplazar los datos actuales por estos? (Se pierde lo que tengas cargado ahora si no lo respaldaste)`)){
-        ev.target.value='';return;
-      }
-      if(tieneMovs) movs=d.movs;
-      if(tieneAps) aps=d.aps;
-      if(tieneStk) stk=d.stk;
-      if(d.repPct!==undefined) repPct=d.repPct;
-      save();
-      renderAll();
-      alert('Datos importados correctamente ✓');
-    }catch(e){
-      alert('Error: el archivo no es un JSON válido.\n'+e.message);
+  try{
+    const txt=await file.text();
+    if(!txt||txt.length===0){
+      alert('El archivo se leyó vacío. Probá descargarlo de nuevo al escritorio o carpeta Descargas.');
+      ev.target.value='';return;
     }
-    ev.target.value='';
-  };
-  reader.readAsText(file);
+    const d=JSON.parse(txt);
+    const tieneMovs=Array.isArray(d.movs);
+    const tieneStk=Array.isArray(d.stk);
+    const tieneAps=Array.isArray(d.aps);
+    if(!tieneMovs&&!tieneStk&&!tieneAps){
+      alert('El archivo no parece un backup de la planilla.');
+      ev.target.value='';return;
+    }
+    const nMov=(d.movs||[]).length, nStk=(d.stk||[]).length, nAp=(d.aps||[]).length;
+    if(!confirm(`El backup contiene:\n- ${nMov} movimientos\n- ${nStk} ítems de stock\n- ${nAp} activos/pasivos\n\n¿Reemplazar los datos actuales por estos?`)){
+      ev.target.value='';return;
+    }
+    if(tieneMovs) movs=d.movs;
+    if(tieneAps) aps=d.aps;
+    if(tieneStk) stk=d.stk;
+    if(d.repPct!==undefined) repPct=d.repPct;
+    save();
+    renderAll();
+    alert('Datos importados correctamente. '+nMov+' movimientos.');
+  }catch(e){
+    alert('Error al importar: '+e.message);
+  }
+  ev.target.value='';
 }
 
 // FIREBASE SYNC
@@ -1105,10 +1105,9 @@ function saveToFirebase(immediate=false){
   else syncTimeout=setTimeout(doSave,3000);
 }
 
-// Override save to also sync
-const _origSave=save;
+// save() guarda en localStorage y ademas sincroniza con Firebase
 function save(){
-  _origSave();
+  saveLocal();
   saveToFirebase();
 }
 
