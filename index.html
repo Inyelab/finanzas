@@ -149,6 +149,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <div class="sync-bar">
       <span class="sync-status"><span class="sync-dot grey" id="syncDot"></span><span id="syncTxt">Sin conectar</span></span>
       <button class="sync-btn connect" id="syncBtn" onclick="handleSync()">☁ Conectar</button>
+      <button class="sync-btn connect" id="bajarBtn" onclick="bajarDeNube()" style="display:none">⬇ Bajar de la nube</button>
     </div>
     <div class="header-date" id="hDate"></div>
   </div>
@@ -1043,12 +1044,15 @@ function setSyncStatus(state,msg){
   const dot=document.getElementById('syncDot');
   const txt=document.getElementById('syncTxt');
   const btn=document.getElementById('syncBtn');
+  const bajar=document.getElementById('bajarBtn');
   txt.textContent=msg;
   dot.className='sync-dot '+(state==='ok'?'green':state==='syncing'?'yellow':'grey');
   if(state==='ok'){btn.textContent='☁ Sincronizado';btn.className='sync-btn syncing';}
   else if(state==='syncing'){btn.textContent='↻ Sincronizando...';btn.className='sync-btn syncing';}
   else if(state==='error'){btn.textContent='☁ Reconectar';btn.className='sync-btn error';btn.onclick=handleSync;}
   else{btn.textContent='☁ Conectar';btn.className='sync-btn connect';btn.onclick=handleSync;}
+  // Mostrar boton "Bajar de la nube" solo si esta conectado
+  if(bajar) bajar.style.display=fbUser?'inline-block':'none';
 }
 
 function handleSync(){
@@ -1071,7 +1075,12 @@ function onLogin(){
     const remote=snap.val();
     const localTs=parseInt(localStorage.getItem('iny_ts')||'0');
     const remoteTs=remote&&remote.ts?remote.ts:0;
-    if(remote&&remoteTs>localTs){
+    // ¿El dispositivo local está vacío? (sin movimientos ni stock)
+    const localVacio=(movs.length===0 && stk.length===0 && aps.length===0);
+    // ¿Firebase tiene datos?
+    const remoteTieneDatos=remote&&((remote.movs&&remote.movs.length)||(remote.stk&&remote.stk.length)||(remote.aps&&remote.aps.length));
+    // Bajar de la nube si: el remoto es mas nuevo, O si el local esta vacio pero la nube tiene datos
+    if(remoteTieneDatos && (remoteTs>localTs || localVacio)){
       if(remote.movs) movs=remote.movs;
       if(remote.aps) aps=remote.aps;
       if(remote.stk) stk=remote.stk;
@@ -1080,13 +1089,14 @@ function onLogin(){
       localStorage.setItem('iny_ap',JSON.stringify(aps));
       localStorage.setItem('iny_stk',JSON.stringify(stk));
       localStorage.setItem('iny_rep',repPct+'');
-      localStorage.setItem('iny_ts',remoteTs+'');
+      localStorage.setItem('iny_ts',(remoteTs||Date.now())+'');
       renderAll();
-      setSyncStatus('ok','Datos cargados ✓ '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}));
-    } else if(localTs>0){
+      setSyncStatus('ok','Datos bajados de la nube ✓ '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}));
+    } else if(!localVacio){
+      // El local tiene datos y es igual o mas nuevo: subir a la nube
       saveToFirebase(true);
     } else {
-      setSyncStatus('ok','Sincronizado ✓');
+      setSyncStatus('ok','Sincronizado (sin datos aún) ✓');
     }
     fbRef.on('value',snap=>{
       const r=snap.val();
@@ -1107,6 +1117,29 @@ function onLogin(){
       }
     });
   }).catch(e=>{setSyncStatus('error','Error cargando');});
+}
+
+// Forzar bajar los datos de la nube (boton manual)
+function bajarDeNube(){
+  if(!fbUser||!fbRef){alert('Primero tocá Conectar.');return;}
+  setSyncStatus('syncing','Bajando de la nube...');
+  fbRef.once('value').then(snap=>{
+    const r=snap.val();
+    if(!r||!((r.movs&&r.movs.length)||(r.stk&&r.stk.length))){
+      alert('La nube no tiene datos guardados todavía.');
+      setSyncStatus('ok','Sincronizado ✓');return;
+    }
+    if(!confirm('Esto va a reemplazar los datos de este dispositivo por los de la nube.\n\nLa nube tiene: '+((r.movs||[]).length)+' movimientos, '+((r.stk||[]).length)+' stock.\n\n¿Continuar?'))return;
+    movs=r.movs||[];aps=r.aps||[];stk=r.stk||[];
+    if(r.repPct!==undefined) repPct=r.repPct;
+    localStorage.setItem('iny_mov',JSON.stringify(movs));
+    localStorage.setItem('iny_ap',JSON.stringify(aps));
+    localStorage.setItem('iny_stk',JSON.stringify(stk));
+    localStorage.setItem('iny_rep',repPct+'');
+    localStorage.setItem('iny_ts',(r.ts||Date.now())+'');
+    renderAll();
+    setSyncStatus('ok','Datos bajados ✓ '+((r.movs||[]).length)+' movimientos');
+  }).catch(e=>{setSyncStatus('error','Error: '+e.message);});
 }
 
 function saveToFirebase(immediate=false){
